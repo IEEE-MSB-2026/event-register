@@ -79,6 +79,19 @@ const flushAllKeys = async () => {
   }
 };
 
+// Publish a message to a Redis Stream (XADD)
+const publishToStream = async (stream, payloadObject) => {
+  try {
+    if (!redisClient) throw new Error('Redis not connected');
+    const payload = JSON.stringify(payloadObject);
+    // Use raw command for compatibility
+    await redisClient.sendCommand(['XADD', stream, '*', 'payload', payload]);
+  } catch (error) {
+    console.error(`❌ Failed to publish to stream ${stream}:`, error);
+    throw new Error('Failed to publish to stream');
+  }
+};
+
 const closeConnection = async () => {
   try {
     await redisClient.quit();
@@ -97,4 +110,5 @@ module.exports = {
   keyExists,
   flushAllKeys,
   checkHealth,
+  publishToStream,
 };

@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const { generateQRCode } = require('../../utils/qrUtils');
-const { sendEmail } = require('../../services/emailService');
+const { sendEmailEvent } = require('../../services/emailClient');
 const Event = require('../../models/Event');
 const Activity = require('../../models/Activity');
 const Participant  = require('../../models/Participant');
@@ -71,18 +71,27 @@ const sendQRToParticipants = async (req, res) => {
           console.log(`QR code generated for ${participant.name}: ${qrCodePath}`);
         }
 
-        const emailText = `Hello ${participant.name},\n\n` +  `Attached is your QR code for the event: ${event.name}. Please bring it with you to scan for check-in.` || mailBody + `\n\nBest regards,\nIEEE Menoufia Student Branch`;
+        const emailText = (mailBody || (`Hello ${participant.name},\n\nAttached is your QR code for the event: ${event.name}. Please bring it with you to scan for check-in.`)) + `\n\nBest regards,\nIEEE Menoufia Student Branch`;
 
-        await sendEmail(
-          participant.email,
-          'Your Event QR Code',
-          emailText,
-          [{ filename: `${participant._id}.png`, path: qrCodePath }]
-        ).then(() => {
+        const contentBase64 = fs.readFileSync(qrCodePath).toString('base64');
+        await sendEmailEvent({
+          to: participant.email,
+          subject: 'Your Event QR Code',
+          text: emailText,
+          attachments: [
+            {
+              filename: `${participant._id}.png`,
+              mimeType: 'image/png',
+              contentBase64
+            }
+          ]
+        })
+        .then(() => {
           participant.qrSent = true;
-        }).catch((err) => {
+        })
+        .catch((err) => {
           participant.qrSent = false;
-          throw new Error(`Failed to send email: ${err.message}`);
+          throw new Error(`Failed to enqueue/send email: ${err.message}`);
         });
         await participant.save();
         fs.unlinkSync(qrCodePath);

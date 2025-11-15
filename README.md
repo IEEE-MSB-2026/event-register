@@ -28,6 +28,23 @@
 - `/api/v1/health/db` - Check the health of the database.
 - `/api/v1/health/redis` - Check the health of the keydb.
 
+## Email Service Integration
+- Email sending is handled by a separate service in `../email-service`.
+- Set in `.env`:
+  - `REDIS_STREAM_EMAIL=email_events`
+  - `EMAIL_SERVICE_URL=http://localhost:5060` (optional HTTP fallback)
+- Ensure `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` are correct for both services.
+- Controller `src/api/controllers/qrController.js` now publishes email events with base64 PNG attachments.
+
+Local run:
+```bash
+# email-service
+cd ../email-service && npm install && cp .env.example .env && npm run dev
+
+# event-register
+cd ../event-register && npm install && npm run dev
+```
+
 ## API Endpoints
 
 ```json
