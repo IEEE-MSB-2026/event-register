@@ -1,14 +1,15 @@
 const redis = require('redis');
+const logger = require('../../../email-service/src/utils/logger');
 
 let redisClient;
 
 const openConnection = async () => {
   redisClient = redis.createClient({
     socket: {
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
+      host: require('../config').redis.host,
+      port: require('../config').redis.port,
     },
-    password: process.env.REDIS_PASSWORD,
+    password: require('../config').redis.password,
   });
 
   try {
@@ -85,6 +86,7 @@ const publishToStream = async (stream, payloadObject) => {
     if (!redisClient) throw new Error('Redis not connected');
     const payload = JSON.stringify(payloadObject);
     // Use raw command for compatibility
+    logger.info(`Publishing to stream ${stream}: ${payload.id}`);
     await redisClient.sendCommand(['XADD', stream, '*', 'payload', payload]);
   } catch (error) {
     console.error(`❌ Failed to publish to stream ${stream}:`, error);

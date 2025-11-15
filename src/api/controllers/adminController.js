@@ -2,8 +2,9 @@ const { getKey, setKey } = require("../../services/keydbService")
 const { generate_key } = require("../../utils/genKey")
 
 const getAllkeys = async (req, res) => {
-  const organizer_key = await getKey(process.env.ORGANIZER_ID)
-  const scanner_key = await getKey(process.env.SCANNER_ID)
+  const config = require('../../config');
+  const organizer_key = await getKey(config.apiKeys.organizerId)
+  const scanner_key = await getKey(config.apiKeys.scannerId)
 
   res.status(200).json({
     organizer: organizer_key,
@@ -16,10 +17,10 @@ const getKeyByName = async (req, res) => {
   let key;
   switch (keyName) {
     case 'organizer':
-      key = process.env.ORGANIZER_ID
+      key = config.apiKeys.organizerId
       break;
     case 'scanner':
-      key = process.env.SCANNER_ID
+      key = config.apiKeys.scannerId
       break;
     default:
       res.status(400).json({
@@ -38,10 +39,10 @@ const issueNewKey = async (req, res) => {
   let key;
   switch (keyName) {
     case 'organizer':
-      key = process.env.ORGANIZER_ID
+      key = config.apiKeys.organizerId
       break;
     case 'scanner':
-      key = process.env.SCANNER_ID
+      key = config.apiKeys.scannerId
       break;
     default:
       res.status(400).json({

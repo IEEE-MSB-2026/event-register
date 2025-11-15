@@ -1,6 +1,7 @@
 #!/usr/bin/node
 
 const dotenv = require("dotenv");
+const config = require('./config');
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -18,8 +19,8 @@ dotenv.config();
 const app = express();
 
 // Connect to MongoDB
-const Port = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
+const Port = config.port;
+const MONGO_URI = config.mongo.uri;
 mongoose
   .connect(MONGO_URI)
   .then(() => {
@@ -45,7 +46,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
 
   res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production'
+    error: config.env === 'production'
       ? 'Internal server error'
       : err.message,
   });

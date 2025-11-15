@@ -2,11 +2,10 @@ const { getKey } = require('../services/keydbService');
 
 const getAPIKeys = async () => {
   let apiKeys = {};
-  apiKeys[process.env.ADMIN_API_KEY] = 'admin';
-
-  apiKeys[await getKey(process.env.ORGANIZER_ID)] = 'organizer';
-
-  apiKeys[await getKey(process.env.SCANNER_ID)] = 'scanner';
+  const config = require('../config');
+  apiKeys[config.apiKeys.admin] = 'admin';
+  apiKeys[await getKey(config.apiKeys.organizerId)] = 'organizer';
+  apiKeys[await getKey(config.apiKeys.scannerId)] = 'scanner';
 
   return apiKeys;
 }
