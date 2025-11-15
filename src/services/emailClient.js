@@ -1,14 +1,14 @@
 // Email client for producing events to Redis Stream or direct HTTP fallback.
 const { publishToStream } = require('./keydbService');
-const { nanoid } = require('nanoid');
+const { randomUUID } = require('crypto');
 
 const STREAM = process.env.REDIS_STREAM_EMAIL || 'email_events';
 const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL; // e.g. http://localhost:5060
 
 function buildPayload({ to, subject, text, templateId, templateVersion, templateVars, attachments, priority }) {
   return {
-    id: nanoid(),
-    correlationId: nanoid(),
+    id: randomUUID(),
+    correlationId: randomUUID(),
     to: Array.isArray(to) ? to : [to],
     subject,
     text,
