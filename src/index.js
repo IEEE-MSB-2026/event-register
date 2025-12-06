@@ -21,17 +21,25 @@ const app = express();
 // Connect to MongoDB
 const Port = config.port;
 const MONGO_URI = config.mongo.uri;
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB connected");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-  });
+if (!MONGO_URI || typeof MONGO_URI !== 'string') {
+  console.error('❌ MongoDB connection skipped: MONGO_URI is missing or invalid.');
+} else {
+  mongoose
+    .connect(MONGO_URI)
+    .then(() => {
+      console.log("✅ MongoDB connected");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection error:", err);
+    });
+}
 
 // Connect to Redis
-openConnection();
+try {
+  openConnection();
+} catch (err) {
+  console.error('❌ Redis initialization skipped due to error:', err.message);
+}
 
 // Middleware
 app.use(express.json());
