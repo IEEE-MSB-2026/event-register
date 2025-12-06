@@ -8,13 +8,21 @@ const logger = {
 let redisClient;
 
 const openConnection = async () => {
-  redisClient = redis.createClient({
-    socket: {
-      host: require('../config').redis.host,
-      port: require('../config').redis.port,
-    },
-    password: require('../config').redis.password,
-  });
+  const config = require('../config');
+
+  // Support REDIS_URL env in addition to host/port/password
+  const url = process.env.REDIS_URL || null;
+  if (url) {
+    redisClient = redis.createClient({ url });
+  } else {
+    redisClient = redis.createClient({
+      socket: {
+        host: config.redis.host,
+        port: config.redis.port,
+      },
+      password: config.redis.password,
+    });
+  }
 
   try {
     await redisClient.connect();
