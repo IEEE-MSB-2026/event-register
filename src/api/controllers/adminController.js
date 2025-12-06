@@ -1,8 +1,8 @@
 const { getKey, setKey } = require("../../services/keydbService")
 const { generate_key } = require("../../utils/genKey")
+const config = require('../../config');
 
 const getAllkeys = async (req, res) => {
-  const config = require('../../config');
   const organizer_key = await getKey(config.apiKeys.organizerId)
   const scanner_key = await getKey(config.apiKeys.scannerId)
 

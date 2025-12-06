@@ -42,6 +42,8 @@ app.use(authMiddleware);
 app.use('/api/v1/events', eventRoutes);
 app.use('/api/v1', baseRoutes);
 app.use('/api/v1/admin', adminRoutes);
+
+// Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
 
@@ -51,6 +53,8 @@ app.use((err, req, res, next) => {
       : err.message,
   });
 });
+
+// 404 Handler
 app.use((req, res) => {
   const imagePath = path.join(__dirname, '../', '404.jpg');
 
