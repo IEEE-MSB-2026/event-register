@@ -1,5 +1,9 @@
 const redis = require('redis');
-const logger = require('../../../email-service/src/utils/logger');
+// Use console as logger to avoid cross-repo dependency
+const logger = {
+  info: (...args) => console.log(...args),
+  error: (...args) => console.error(...args)
+};
 
 let redisClient;
 
