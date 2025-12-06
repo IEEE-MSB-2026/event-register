@@ -84,7 +84,7 @@ app.use((req, res) => {
 });
 
 // Start the server
-app.listen(Port, () => {
+app.listen(Port, '0.0.0.0', () => {
   console.log(`Server is running on port ${Port}`);
 });
 

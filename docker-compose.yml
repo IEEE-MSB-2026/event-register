@@ -1,0 +1,56 @@
+version: '3.9'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: event-register-nginx
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+  app:
+    build: .
+    container_name: event-register-app
+    restart: unless-stopped
+    expose:
+      - "5050"
+    environment:
+      NODE_ENV: production
+      PORT: 5050
+      MONGO_URI: mongodb://mongo:27017/ieee-registration
+      REDIS_URL: redis://redis:6379
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-Dz+T6MhHpQLHa7YiQDhgJMkJPU0+nP/x2krG4b5R804=}
+      ORGANIZER_ID: ${ORGANIZER_ID:-IEEE-ORGANIZER-API-KEY}
+      SCANNER_ID: ${SCANNER_ID:-IEEE-SCANNER-API-KEY}
+      EMAIL_SERVICE_URL: ${EMAIL_SERVICE_URL:-http://localhost:5060}
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - uploads:/app/uploads
+
+  mongo:
+    image: mongo:7
+    container_name: event-register-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: event-register-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  uploads:
+  mongo_data:
+  redis_data:
