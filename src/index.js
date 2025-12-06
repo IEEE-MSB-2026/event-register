@@ -34,11 +34,15 @@ if (!MONGO_URI || typeof MONGO_URI !== 'string') {
     });
 }
 
-// Connect to Redis
-try {
-  openConnection();
-} catch (err) {
-  console.error('❌ Redis initialization skipped due to error:', err.message);
+// Connect to Redis (handle async errors and missing config)
+const hasRedisConfig = process.env.REDIS_URL || (config.redis && config.redis.host);
+if (!hasRedisConfig) {
+  console.warn('⚠️ Redis config missing; skipping Redis connection.');
+} else {
+  openConnection()
+    .catch((err) => {
+      console.error('❌ Redis initialization skipped due to error:', err.message);
+    });
 }
 
 // Middleware
