@@ -7,6 +7,12 @@ const logger = {
 
 let redisClient;
 
+const ensureConnected = () => {
+  if (!redisClient || !redisClient.isOpen) {
+    throw new Error('Redis client is not connected');
+  }
+};
+
 const openConnection = async () => {
   const config = require('../config');
 
@@ -35,6 +41,7 @@ const openConnection = async () => {
 
 const checkHealth = async () => {
   try {
+    ensureConnected();
     const ping = await redisClient.ping();
     return { healthy: true, ping };
   } catch (error) {
@@ -45,6 +52,7 @@ const checkHealth = async () => {
 
 const setKey = async (key, value, expirationInSeconds) => {
   try {
+    ensureConnected();
     await redisClient.set(key, JSON.stringify(value), {
       EX: expirationInSeconds,
     });
@@ -56,6 +64,7 @@ const setKey = async (key, value, expirationInSeconds) => {
 
 const getKey = async (key) => {
   try {
+    ensureConnected();
     const value = await redisClient.get(key);
     return value ? JSON.parse(value) : null;
   } catch (error) {
@@ -66,6 +75,7 @@ const getKey = async (key) => {
 
 const deleteKey = async (key) => {
   try {
+    ensureConnected();
     await redisClient.del(key);
   } catch (error) {
     console.error(`❌ Failed to delete key ${key}:`, error);
@@ -75,6 +85,7 @@ const deleteKey = async (key) => {
 
 const keyExists = async (key) => {
   try {
+    ensureConnected();
     const exists = await redisClient.exists(key);
     return exists === 1;
   } catch (error) {
@@ -85,6 +96,7 @@ const keyExists = async (key) => {
 
 const flushAllKeys = async () => {
   try {
+    ensureConnected();
     await redisClient.flushAll();
   } catch (error) {
     console.error('❌ Failed to flush keys:', error);
@@ -95,10 +107,10 @@ const flushAllKeys = async () => {
 // Publish a message to a Redis Stream (XADD)
 const publishToStream = async (stream, payloadObject) => {
   try {
-    if (!redisClient) throw new Error('Redis not connected');
+    ensureConnected();
     const payload = JSON.stringify(payloadObject);
     // Use raw command for compatibility
-    logger.info(`Publishing to stream ${stream}: ${payload.id}`);
+    logger.info(`Publishing to stream ${stream}: ${payloadObject.id}`);
     await redisClient.sendCommand(['XADD', stream, '*', 'payload', payload]);
   } catch (error) {
     console.error(`❌ Failed to publish to stream ${stream}:`, error);

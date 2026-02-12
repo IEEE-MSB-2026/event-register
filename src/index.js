@@ -11,9 +11,16 @@ const path = require('path');
 const eventRoutes = require('./api/routes/eventRoutes');
 const baseRoutes = require('./api/routes/baseRoutes');
 const adminRoutes = require('./api/routes/adminRoutes');
-const { authMiddleware } = require('./middlewares/auth');
+const { authMiddleware, assertAuthConfig } = require('./middlewares/auth');
 const { openConnection } = require("./services/keydbService");
 dotenv.config();
+
+try {
+  assertAuthConfig();
+} catch (err) {
+  console.error(`❌ Auth configuration error: ${err.message}`);
+  process.exit(1);
+}
 
 
 const app = express();

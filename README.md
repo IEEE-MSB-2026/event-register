@@ -31,8 +31,9 @@
 ## Email Service Integration
 - Email sending is handled by a separate service in `../email-service`.
 - Set in `.env`:
-  - `REDIS_STREAM_EMAIL=email_events`
+  - `REDIS_STREAM_EMAIL=internal`
   - `EMAIL_SERVICE_URL=http://localhost:5060` (optional HTTP fallback)
+  - `EMAIL_SERVICE_AUTH_TOKEN=<same token used by email-service>`
 - Ensure `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` are correct for both services.
 - Controller `src/api/controllers/qrController.js` now publishes email events with base64 PNG attachments.
 
@@ -124,18 +125,18 @@ cd ../event-register && npm install && npm run dev
   },
   {
     "method": "POST",
-    "path": "/api/v1/enents/participants/upload/",
+    "path": "/api/v1/events/:id/participants/upload/",
     "description": "Upload participants from a CSV file"
   },
 
   {
-    "method": "GET",
+    "method": "POST",
     "path": "/api/v1/events/:id/qr/send",
     "description": "Send QR codes to participants via email"
   },
   {
     "method": "POST",
-    "path": "/api/v1/events/:id/qr/register-activity",
+    "path": "/api/v1/events/:id/qr/scan",
     "description": "Register a scanned activity for a participant"
   },
 
@@ -297,9 +298,19 @@ cd ../event-register && npm install && npm run dev
 
 ### Register Activity For Participant
 
-- `POST /api/v1/events/:eventId/qr/register-activity?ticketId=[value]&activityId=[value]` - Register an activity for a participant.
+- `POST /api/v1/events/:eventId/qr/scan` - Register an activity for a participant.
+- Request Body:
+
+```json
+{
+  "ticketId": "participant_id",
+  "activityQrId": "activity_qr_id"
+}
+```
 - Response:
 
 ```json
-  Activity scanned successfully
+{
+  "message": "Activity scanned successfully"
+}
 ```

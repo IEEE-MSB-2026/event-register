@@ -5,9 +5,11 @@ const { randomUUID } = require('crypto');
 
 const STREAM = config.email.stream;
 const EMAIL_SERVICE_URL = config.email.serviceUrl; // e.g. http://localhost:5060
+const EMAIL_SERVICE_AUTH_TOKEN = config.email.serviceAuthToken;
 
 function buildPayload({ to, subject, text, templateId, templateVersion, templateVars, attachments, priority }) {
   return {
+    schemaVersion: '1.0',
     id: randomUUID(),
     correlationId: randomUUID(),
     to: Array.isArray(to) ? to : [to],
@@ -34,19 +36,26 @@ async function sendEmailEvent(opts) {
   } catch (e) {
     // Fallback to direct HTTP if available
     if (EMAIL_SERVICE_URL) {
+      const { URL } = require('node:url');
+      const parsed = new URL(`${EMAIL_SERVICE_URL}/email/send`);
+      const httpLib = parsed.protocol === 'https:' ? require('node:https') : require('node:http');
+      const headers = { 'Content-Type': 'application/json' };
+      if (EMAIL_SERVICE_AUTH_TOKEN) {
+        headers['x-service-token'] = EMAIL_SERVICE_AUTH_TOKEN;
+      }
+      const options = {
+        method: 'POST',
+        headers
+      };
       return new Promise((resolve, reject) => {
-        const req = require('node:http').request(
-          `${EMAIL_SERVICE_URL}/email/send`,
-          { method: 'POST', headers: { 'Content-Type': 'application/json' } },
-          res => {
-            let data = '';
-            res.on('data', c => data += c);
-            res.on('end', () => {
-              if (res.statusCode < 300) return resolve({ fallback: true, response: data });
-              reject(new Error(`Email service failed: ${res.statusCode}`));
-            });
-          }
-        );
+        const req = httpLib.request(parsed, options, res => {
+          let data = '';
+          res.on('data', c => data += c);
+          res.on('end', () => {
+            if (res.statusCode && res.statusCode < 300) return resolve({ fallback: true, response: data });
+            reject(new Error(`Email service failed: ${res.statusCode}`));
+          });
+        });
         req.on('error', reject);
         req.write(JSON.stringify(payload));
         req.end();

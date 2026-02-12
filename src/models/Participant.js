@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const participantSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, require: true },
+  email: { type: String, required: true, trim: true, lowercase: true },
   phoneNumber: String,
   university: String,
   faculty: String,
@@ -24,5 +24,7 @@ const participantSchema = new mongoose.Schema({
     scannedAt: { type: Date, default: Date.now }
   }],
 }, { timestamps: true });
+
+participantSchema.index({ eventId: 1, email: 1 }, { unique: true });
 
 module.exports = mongoose.model('Participant', participantSchema);

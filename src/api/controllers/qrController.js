@@ -10,16 +10,28 @@ const Activity = require('../../models/Activity');
 const Participant  = require('../../models/Participant');
 
 const registerActivity = async (req, res) => {
-  const { ticketId, activityId } = req.query;
+  const { eventId } = req.params;
+  const { ticketId, activityQrId } = req.body || {};
+
+  if (!ticketId || !activityQrId) {
+    return res.status(400).json({ error: 'ticketId and activityQrId are required' });
+  }
+
+  const event = await Event.findById(eventId);
+  if (!event) return res.status(404).json({ error: 'Event not found' });
 
   const participant = await Participant.findById(ticketId);
-  if (!participant) return res.status(404).send('Participant not found');
+  if (!participant) return res.status(404).json({ error: 'Participant not found' });
 
-  const activity = await Activity.findOne({ qrId: activityId });
-  if (!activity) return res.status(404).send('Activity not found');
+  if (participant.eventId.toString() !== eventId) {
+    return res.status(403).json({ error: 'Participant does not belong to this event' });
+  }
 
-  if (activity.eventId.toString() !== participant.eventId.toString()) {
-    return res.status(400).send('QR code does not belong to this event');
+  const activity = await Activity.findOne({ qrId: activityQrId });
+  if (!activity) return res.status(404).json({ error: 'Activity not found' });
+
+  if (activity.eventId.toString() !== eventId) {
+    return res.status(403).json({ error: 'Activity does not belong to this event' });
   }
 
   const alreadyScanned = participant.scannedActivities.find(scan =>
@@ -27,13 +39,13 @@ const registerActivity = async (req, res) => {
   );
 
   if (alreadyScanned) {
-    return res.status(400).send('Activity already scanned');
+    return res.status(409).json({ error: 'Activity already scanned' });
   }
 
   participant.scannedActivities.push({ activityId: activity._id });
   await participant.save();
 
-  return res.status(200).send('Activity scanned successfully');
+  return res.status(200).json({ message: 'Activity scanned successfully' });
 }
 
 const sendQRToParticipants = async (req, res) => {

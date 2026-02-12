@@ -22,10 +22,10 @@ const getAllRoutes = (req, res) => {
       { method: 'POST', path: '/api/v1/events/:id/participants/', description: 'Add participants to an event' },
       { method: 'GET', path: '/api/v1/events/:id/participants/', description: 'Get all participants for an event' },
       { method: 'GET', path: '/api/v1/events/:id/participants/:participantId', description: 'Get participant by ID' },
-      { method: 'POST', path: '/api/v1/enents/participants/upload/', description: 'Upload participants from a CSV file' },
+      { method: 'POST', path: '/api/v1/events/:id/participants/upload/', description: 'Upload participants from a CSV file' },
 
-      { method: 'GET', path: '/api/v1/events/:id/qr/send', description: 'Send QR codes to participants via email' },
-      { method: 'POST', path: '/api/v1/events/:id/qr/register-activity', description: 'Register a scanned activity for a participant' },
+      { method: 'POST', path: '/api/v1/events/:id/qr/send', description: 'Send QR codes to participants via email' },
+      { method: 'POST', path: '/api/v1/events/:id/qr/scan', description: 'Register a scanned activity for a participant' },
 
       { method: 'POST', path: '/api/v1/admin/keys/:KeyName/issue', description: 'Issue a new key' },
       { method: 'GET', path: '/api/v1/admin/keys', description: 'Get all keys' },

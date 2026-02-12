@@ -33,6 +33,9 @@ const validateParticipant = [
 
 const validateParticipantObject = async (data) => {
   const { participant, eventId } = data;
+  if (typeof participant.email === 'string') {
+    participant.email = participant.email.trim().toLowerCase();
+  }
   const req = { body: participant };
   for (const validator of validateParticipant) {
     await validator.run(req);

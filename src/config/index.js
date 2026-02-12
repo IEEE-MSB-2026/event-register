@@ -14,7 +14,8 @@ const config = {
 	},
 	email: {
 		stream: process.env.REDIS_STREAM_EMAIL || null,
-		serviceUrl: process.env.EMAIL_SERVICE_URL || null
+		serviceUrl: process.env.EMAIL_SERVICE_URL || null,
+		serviceAuthToken: process.env.EMAIL_SERVICE_AUTH_TOKEN || null
 	},
 	apiKeys: {
 		admin: process.env.ADMIN_API_KEY,

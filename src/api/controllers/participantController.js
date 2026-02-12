@@ -10,21 +10,25 @@ const addParticipant = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { name, email, phoneNumber, university, faculty, major } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
 
-    const exists = await Participant.findOne({ email, eventId });
+    const exists = await Participant.findOne({ email: normalizedEmail, eventId });
     if (exists) {
-      return res.status(400).json({ error: 'Email already registered for this event' });
+      return res.status(409).json({ error: 'Email already registered for this event' });
     }
 
     const participant = new Participant({
       eventId,
-      name, email, phoneNumber, university, faculty, major
+      name, email: normalizedEmail, phoneNumber, university, faculty, major
     });
 
     await participant.save();
 
     res.status(201).json({ message: 'Participant added', participant });
   } catch (err) {
+    if (err && err.code === 11000) {
+      return res.status(409).json({ error: 'Email already registered for this event' });
+    }
     console.error(err);
     res.status(500).json({ error: 'Failed to add participant' });
   }
@@ -48,7 +52,7 @@ const uploadCSV = async (req, res) => {
       // Normalize incoming CSV keys to expected fields
       const normalized = {
         name: (participant.name || participant.Name || '').trim(),
-        email: (participant.email || participant.Email || '').trim(),
+        email: (participant.email || participant.Email || '').trim().toLowerCase(),
         phoneNumber: (participant.phoneNumber || participant.Number || participant.Phone || '').toString().trim(),
         university: (participant.university || participant.University || '').trim(),
         faculty: (participant.faculty || participant.Faculty || '').trim(),
