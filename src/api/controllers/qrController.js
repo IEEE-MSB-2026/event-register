@@ -10,42 +10,48 @@ const Activity = require('../../models/Activity');
 const Participant  = require('../../models/Participant');
 
 const registerActivity = async (req, res) => {
-  const { eventId } = req.params;
-  const { ticketId, activityQrId } = req.body || {};
+  try {
+    const { eventId } = req.params;
+    const body = req.body || {};
+    const ticketId = typeof body.ticketId === 'string' ? body.ticketId.trim() : '';
+    const activityQrId = typeof body.activityQrId === 'string' ? body.activityQrId.trim() : '';
+    if (!ticketId || !activityQrId) {
+      return res.status(400).json({ error: 'ticketId and activityQrId are required' });
+    }
 
-  if (!ticketId || !activityQrId) {
-    return res.status(400).json({ error: 'ticketId and activityQrId are required' });
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    const participant = await Participant.findById(ticketId);
+    if (!participant) return res.status(404).json({ error: 'Participant not found' });
+
+    if (participant.eventId.toString() !== eventId) {
+      return res.status(403).json({ error: 'Participant does not belong to this event' });
+    }
+
+    const activity = await Activity.findOne({ qrId: activityQrId });
+    if (!activity) return res.status(404).json({ error: 'Activity not found' });
+
+    if (activity.eventId.toString() !== eventId) {
+      return res.status(403).json({ error: 'Activity does not belong to this event' });
+    }
+
+    const alreadyScanned = participant.scannedActivities.find(scan =>
+      scan.activityId.toString() === activity._id.toString()
+    );
+
+    if (alreadyScanned) {
+      return res.status(409).json({ error: 'Activity already scanned' });
+    }
+
+    participant.scannedActivities.push({ activityId: activity._id });
+    await participant.save();
+
+    return res.status(200).json({ message: 'Activity scanned successfully' });
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({ error: status === 500 ? 'Internal server error' : error.message });
   }
-
-  const event = await Event.findById(eventId);
-  if (!event) return res.status(404).json({ error: 'Event not found' });
-
-  const participant = await Participant.findById(ticketId);
-  if (!participant) return res.status(404).json({ error: 'Participant not found' });
-
-  if (participant.eventId.toString() !== eventId) {
-    return res.status(403).json({ error: 'Participant does not belong to this event' });
-  }
-
-  const activity = await Activity.findOne({ qrId: activityQrId });
-  if (!activity) return res.status(404).json({ error: 'Activity not found' });
-
-  if (activity.eventId.toString() !== eventId) {
-    return res.status(403).json({ error: 'Activity does not belong to this event' });
-  }
-
-  const alreadyScanned = participant.scannedActivities.find(scan =>
-    scan.activityId.toString() === activity._id.toString()
-  );
-
-  if (alreadyScanned) {
-    return res.status(409).json({ error: 'Activity already scanned' });
-  }
-
-  participant.scannedActivities.push({ activityId: activity._id });
-  await participant.save();
-
-  return res.status(200).json({ message: 'Activity scanned successfully' });
 }
 
 const sendQRToParticipants = async (req, res) => {

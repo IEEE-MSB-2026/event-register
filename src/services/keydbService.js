@@ -19,7 +19,10 @@ const openConnection = async () => {
   // Support REDIS_URL env in addition to host/port/password
   const url = process.env.REDIS_URL || null;
   if (url) {
-    redisClient = redis.createClient({ url });
+    redisClient = redis.createClient({
+      url,
+      password: config.redis.password || process.env.REDIS_PASSWORD || undefined,
+    });
   } else {
     redisClient = redis.createClient({
       socket: {
@@ -53,12 +56,53 @@ const checkHealth = async () => {
 const setKey = async (key, value, expirationInSeconds) => {
   try {
     ensureConnected();
-    await redisClient.set(key, JSON.stringify(value), {
-      EX: expirationInSeconds,
-    });
+    const options = {};
+    if (typeof expirationInSeconds === 'number' && Number.isFinite(expirationInSeconds) && expirationInSeconds > 0) {
+      options.EX = expirationInSeconds;
+    }
+
+    if (Object.keys(options).length) {
+      await redisClient.set(key, JSON.stringify(value), options);
+    } else {
+      await redisClient.set(key, JSON.stringify(value));
+    }
   } catch (error) {
     console.error(`❌ Failed to set key ${key}:`, error);
     throw new Error('Failed to set key');
+  }
+};
+
+const bootstrapDefaultRoleKeys = async () => {
+  const config = require('../config');
+  try {
+    ensureConnected();
+
+    const organizerKeyName = config.apiKeys.organizerId;
+    const scannerKeyName = config.apiKeys.scannerId;
+
+    if (!organizerKeyName || !scannerKeyName) {
+      throw new Error('Missing ORGANIZER_ID or SCANNER_ID');
+    }
+
+    const organizerExisting = await getKey(organizerKeyName);
+    if (!organizerExisting) {
+      await setKey(organizerKeyName, organizerKeyName);
+      logger.info(`✅ Bootstrapped organizer key in Redis: ${organizerKeyName}`);
+    }
+
+    const scannerExisting = await getKey(scannerKeyName);
+    if (!scannerExisting) {
+      await setKey(scannerKeyName, scannerKeyName);
+      logger.info(`✅ Bootstrapped scanner key in Redis: ${scannerKeyName}`);
+    }
+
+    return {
+      organizer: organizerExisting || organizerKeyName,
+      scanner: scannerExisting || scannerKeyName,
+    };
+  } catch (error) {
+    logger.error('❌ Failed to bootstrap default role keys:', error);
+    throw new Error('Failed to bootstrap default role keys');
   }
 };
 
@@ -137,4 +181,5 @@ module.exports = {
   flushAllKeys,
   checkHealth,
   publishToStream,
+  bootstrapDefaultRoleKeys,
 };

@@ -12,7 +12,7 @@ const eventRoutes = require('./api/routes/eventRoutes');
 const baseRoutes = require('./api/routes/baseRoutes');
 const adminRoutes = require('./api/routes/adminRoutes');
 const { authMiddleware, assertAuthConfig } = require('./middlewares/auth');
-const { openConnection } = require("./services/keydbService");
+const { openConnection, bootstrapDefaultRoleKeys } = require("./services/keydbService");
 dotenv.config();
 
 try {
@@ -47,6 +47,7 @@ if (!hasRedisConfig) {
   console.warn('⚠️ Redis config missing; skipping Redis connection.');
 } else {
   openConnection()
+    .then(() => bootstrapDefaultRoleKeys())
     .catch((err) => {
       console.error('❌ Redis initialization skipped due to error:', err.message);
     });

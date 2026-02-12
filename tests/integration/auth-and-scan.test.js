@@ -1,0 +1,141 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const express = require('express');
+const dotenv = require('dotenv');
+dotenv.config();
+
+process.env.ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'integration-admin-key';
+process.env.ORGANIZER_ID = process.env.ORGANIZER_ID || 'integration-organizer-id';
+process.env.SCANNER_ID = process.env.SCANNER_ID || 'integration-scanner-id';
+
+const { authMiddleware, requireRole } = require('../../src/middlewares/auth');
+const { registerActivity } = require('../../src/api/controllers/qrController');
+const Event = require('../../src/models/Event');
+const Activity = require('../../src/models/Activity');
+const Participant = require('../../src/models/Participant');
+
+function createServer(app) {
+  return new Promise((resolve) => {
+    const server = app.listen(0, '127.0.0.1', () => resolve(server));
+  });
+}
+
+function getBaseUrl(server) {
+  const addr = server.address();
+  return `http://127.0.0.1:${addr.port}`;
+}
+
+function makeJsonRes() {
+  return {
+    statusCode: 200,
+    headers: {},
+    body: null,
+    set(name, value) {
+      this.headers[name.toLowerCase()] = value;
+      return this;
+    },
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.body = payload;
+      return this;
+    },
+  };
+}
+
+test('auth integration: protected route rejects missing x-api-key', async () => {
+  const app = express();
+  app.use(authMiddleware);
+  app.get('/protected', requireRole('admin'), (req, res) => res.status(200).json({ ok: true }));
+
+  const server = await createServer(app);
+  try {
+    const response = await fetch(`${getBaseUrl(server)}/protected`);
+    const payload = await response.json();
+    assert.equal(response.status, 401);
+    assert.equal(payload.error, 'Unauthorized');
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('auth integration: protected route fails closed when auth backend is unavailable', async () => {
+  const app = express();
+  app.use(authMiddleware);
+  app.get('/protected', requireRole('admin'), (req, res) => res.status(200).json({ ok: true }));
+
+  const server = await createServer(app);
+  try {
+    const response = await fetch(`${getBaseUrl(server)}/protected`, {
+      headers: { 'x-api-key': 'random-invalid-key' },
+    });
+    const payload = await response.json();
+    assert.equal(response.status, 503);
+    assert.equal(payload.error, 'Authorization subsystem unavailable');
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('scan scope isolation: rejects cross-event activity scans', async () => {
+  const originalFindEvent = Event.findById;
+  const originalFindActivity = Activity.findOne;
+  const originalFindParticipant = Participant.findById;
+
+  Event.findById = async () => ({ _id: 'event-A' });
+  Participant.findById = async () => ({
+    _id: 'participant-1',
+    eventId: { toString: () => 'event-A' },
+    scannedActivities: [],
+    save: async () => {},
+  });
+  Activity.findOne = async () => ({
+    _id: 'activity-1',
+    eventId: { toString: () => 'event-B' },
+  });
+
+  try {
+    const req = {
+      params: { eventId: 'event-A' },
+      body: { ticketId: 'participant-1', activityQrId: 'qr-1' },
+      query: {},
+    };
+    const res = makeJsonRes();
+
+    await registerActivity(req, res);
+
+    assert.equal(res.statusCode, 403);
+    assert.equal(res.body.error, 'Activity does not belong to this event');
+  } finally {
+    Event.findById = originalFindEvent;
+    Activity.findOne = originalFindActivity;
+    Participant.findById = originalFindParticipant;
+  }
+});
+
+test('scan contract: query-style input is rejected when body is missing', async () => {
+  const originalFindEvent = Event.findById;
+  Event.findById = async () => {
+    throw new Error('Event lookup should not run when payload is invalid');
+  };
+
+  try {
+    const req = {
+      params: { eventId: 'event-A' },
+      body: {},
+      query: { ticketId: 'participant-1', activityId: 'legacy-qr-id' },
+    };
+    const res = makeJsonRes();
+
+    await registerActivity(req, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.error, 'ticketId and activityQrId are required');
+    assert.equal(res.headers.deprecation, undefined);
+    assert.equal(res.headers.sunset, undefined);
+  } finally {
+    Event.findById = originalFindEvent;
+  }
+});

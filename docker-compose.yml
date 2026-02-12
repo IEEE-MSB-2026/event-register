@@ -33,7 +33,8 @@ services:
       NODE_ENV: production
       PORT: 5050
       MONGO_URI: mongodb://mongo:27017/ieee-registration
-      REDIS_URL: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change-me-strong-password}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-me-strong-password}@redis:6379
       REDIS_STREAM_EMAIL: internal
       ADMIN_API_KEY: ${ADMIN_API_KEY:-Dz+T6MhHpQLHa7YiQDhgJMkJPU0+nP/x2krG4b5R804=}
       ORGANIZER_ID: ${ORGANIZER_ID:-IEEE-ORGANIZER-API-KEY}
