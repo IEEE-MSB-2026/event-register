@@ -83,60 +83,60 @@ cd ../event-register && npm install && npm run dev
   },
   {
     "method": "GET",
-    "path": "/api/v1/events/:id",
+    "path": "/api/v1/events/:eventId",
     "description": "Get event by ID"
   },
   {
     "method": "DELETE",
-    "path": "/api/v1/events/:id",
+    "path": "/api/v1/events/:eventId",
     "description": "Delete event by ID"
   },
 
   {
     "method": "GET",
-    "path": "/api/v1/events/:id/activities/",
+    "path": "/api/v1/events/:eventId/activities",
     "description": "Get all activities for an event"
   },
   {
     "method": "POST",
-    "path": "/api/v1/events/:id/activities/",
+    "path": "/api/v1/events/:eventId/activities",
     "description": "Create a new activity for an event"
   },
   {
     "method": "GET",
-    "path": "/api/v1/events/:id/activities/:activityId",
+    "path": "/api/v1/events/:eventId/activities/:activityId",
     "description": "Get activity by ID"
   },
 
   {
     "method": "POST",
-    "path": "/api/v1/events/:id/participants/",
+    "path": "/api/v1/events/:eventId/participants",
     "description": "Add participants to an event"
   },
   {
     "method": "GET",
-    "path": "/api/v1/events/:id/participants/",
+    "path": "/api/v1/events/:eventId/participants",
     "description": "Get all participants for an event"
   },
   {
     "method": "GET",
-    "path": "/api/v1/events/:id/participants/:participantId",
+    "path": "/api/v1/events/:eventId/participants/:participantId",
     "description": "Get participant by ID"
   },
   {
     "method": "POST",
-    "path": "/api/v1/events/:id/participants/upload/",
+    "path": "/api/v1/events/:eventId/participants/upload",
     "description": "Upload participants from a CSV file"
   },
 
   {
     "method": "POST",
-    "path": "/api/v1/events/:id/qr/send",
+    "path": "/api/v1/events/:eventId/qr/send",
     "description": "Send QR codes to participants via email"
   },
   {
     "method": "POST",
-    "path": "/api/v1/events/:id/qr/scan",
+    "path": "/api/v1/events/:eventId/qr/scan",
     "description": "Register a scanned activity for a participant"
   },
 
