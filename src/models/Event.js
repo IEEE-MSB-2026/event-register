@@ -7,13 +7,14 @@ const customFieldSchema = new mongoose.Schema({
   label: { type: String, required: true },
   type: {
     type: String,
-    enum: ['text', 'select', 'textarea', 'number', 'checkbox', 'national_id'],
+    enum: ['text', 'select', 'textarea', 'number', 'checkbox', 'national_id', 'multi_select', 'url'],
     default: 'text',
   },
   options: [{ type: String }],
   required: { type: Boolean, default: false },
   placeholder: { type: String, default: '' },
   order: { type: Number, default: 0 },
+  section: { type: String, default: 'General', trim: true },
 }, { _id: false });
 
 const eventSchema = new mongoose.Schema({
