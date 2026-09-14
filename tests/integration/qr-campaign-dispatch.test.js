@@ -140,7 +140,9 @@ test('QR Campaign Dispatch: prepare-campaign & dispatch-callback flow', async (t
   app.use('/api/v1/events', eventRoutes);
 
   const server = await createServer(app);
-  t.after(() => server.close());
+  t.after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+  });
   const baseUrl = getBaseUrl(server);
 
   const eventId = nextObjectId();
@@ -232,4 +234,38 @@ test('QR Campaign Dispatch: prepare-campaign & dispatch-callback flow', async (t
   assert.ok(p1.qrSentAt instanceof Date);
   assert.equal(p2.status, 'ticket_sent');
   assert.equal(p2.qrSent, true);
+
+  // Test 3: OC Lead with role=lead and scopeType=committee can prepare campaign
+  const ocLeadClaims = {
+    userId: 'lead-oc-1',
+    role: 'lead',
+    scopeType: 'committee',
+    scopeId: '44444444-4444-4444-8444-444444444444',
+  };
+
+  const p3Id = nextObjectId();
+  const p3 = new Participant({
+    _id: p3Id,
+    eventId,
+    name: 'Attendee Three',
+    email: 'attendee3@ieeemsb.org',
+    status: 'registered',
+    qrSent: false,
+  });
+  await p3.save();
+
+  const ocPrepRes = await fetch(`${baseUrl}/api/v1/events/${eventId}/qr/prepare-campaign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...buildHeaders(ocLeadClaims),
+    },
+    body: JSON.stringify({
+      sendToAllUnsent: true,
+    }),
+  });
+
+  assert.equal(ocPrepRes.status, 200);
+  const ocPrepBody = await ocPrepRes.json();
+  assert.ok(ocPrepBody.recipients.some((r) => r.email === 'attendee3@ieeemsb.org'));
 });
