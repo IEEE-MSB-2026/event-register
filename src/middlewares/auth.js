@@ -43,9 +43,6 @@ const authMiddleware = async (req, res, next) => {
   try {
     const claims = parseSignedClaims(req);
     if (claims) {
-      console.log(
-        `[auth] verified claims for ${req.method} ${req.originalUrl} role=${claims.role} scopeType=${claims.scopeType} scopeId=${claims.scopeId ?? 'null'} exp=${claims.exp}`
-      );
       req.auth = {
         userId: claims.userId || claims.user_id || null,
         role: claims.role,
